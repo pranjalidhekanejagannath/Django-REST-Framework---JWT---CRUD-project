@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Django REST Frontend</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>📚 Book Manager</h1>
+
+  <!-- Registration -->
+  <section>
+    <h2>Register</h2>
+    <input type="text" id="reg_username" placeholder="Username">
+    <input type="email" id="reg_email" placeholder="Email">
+    <input type="password" id="reg_password" placeholder="Password">
+    <input type="password" id="reg_password2" placeholder="Confirm Password">
+    <button onclick="register()">Register</button>
+    <pre id="register_result"></pre>
+  </section>
+
+  <!-- Login -->
+  <section>
+    <h2>Login</h2>
+    <input type="text" id="login_username" placeholder="Username">
+    <input type="password" id="login_password" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <pre id="login_result"></pre>
+  </section>
+
+  <!-- Add Book -->
+  <section>
+    <h2>Add Book</h2>
+    <input type="text" id="book_title" placeholder="Title">
+    <input type="text" id="book_author" placeholder="Author">
+    <input type="date" id="book_date">
+    <input type="number" id="book_price" placeholder="Price">
+    <button onclick="addBook()">Add Book</button>
+    <pre id="add_result"></pre>
+  </section>
+
+  <!-- Book List -->
+  <section>
+    <h2>All Books</h2>
+    <button onclick="getBooks()">Load Books</button>
+    <ul id="book_list"></ul>
+  </section>
+
+  <script>
+    const API_BASE = "http://127.0.0.1:8000/api";
+    let accessToken = "";
+
+    async function register() {
+      let data = {
+        username: document.getElementById("reg_username").value,
+        email: document.getElementById("reg_email").value,
+        password: document.getElementById("reg_password").value,
+        password2: document.getElementById("reg_password2").value
+      };
+      let res = await fetch(`${API_BASE}/auth/register/`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(data)
+      });
+      document.getElementById("register_result").innerText = await res.text();
+    }
+
+    async function login() {
+      let data = {
+        username: document.getElementById("login_username").value,
+        password: document.getElementById("login_password").value
+      };
+      let res = await fetch(`${API_BASE}/token/`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(data)
+      });
+      let result = await res.json();
+      document.getElementById("login_result").innerText = JSON.stringify(result, null, 2);
+      accessToken = result.access; // save token
+    }
+
+    async function addBook() {
+      if (!accessToken) {
+        alert("Please login first!");
+        return;
+      }
+      let data = {
+        title: document.getElementById("book_title").value,
+        author: document.getElementById("book_author").value,
+        published_date: document.getElementById("book_date").value,
+        price: document.getElementById("book_price").value
+      };
+      let res = await fetch(`${API_BASE}/books/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + accessToken
+        },
+        body: JSON.stringify(data)
+      });
+      document.getElementById("add_result").innerText = await res.text();
+    }
+
+    async function getBooks() {
+      let res = await fetch(`${API_BASE}/books/`);
+      let books = await res.json();
+      let list = document.getElementById("book_list");
+      list.innerHTML = "";
+      books.forEach(b => {
+        let li = document.createElement("li");
+        li.textContent = `${b.title} by ${b.author} (₹${b.price})`;
+        list.appendChild(li);
+      });
+    }
+  </script>
+</body>
+</html>
